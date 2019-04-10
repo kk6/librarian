@@ -1,0 +1,59 @@
+{% extends "base.html" %} {% block title %}Top{% endblock %} {% block content %}
+<div class="container">
+  <h1 class="title"><a href="/">Librarian</a></h1>
+  <p class="subtitle">openBD収録書誌検索</p>
+  <form action="/search">
+    <div class="field has-addons">
+      <div class="control is-expanded">
+        <input
+          class="input"
+          type="text"
+          name="q"
+          placeholder="検索ワードを入力"
+        />
+      </div>
+      <div class="control">
+        <button type="submit" class="button is-info">
+          Search
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+<hr />
+<div class="container">
+  <div class="content">
+    {% for summary in summaries %}
+    <article class="media">
+      <figure class="media-left">
+        <p class="image is-64x64">
+          <a href="/book/{{ summary.isbn }}">
+            <img
+              src="{{ summary.cover if summary.cover else '/static/images/placeholder.jpg' }}"
+              alt="Placeholder image"
+            />
+          </a>
+        </p>
+      </figure>
+      <div class="media-content">
+        <div class="content">
+          <p>
+            <a href="/book/{{ summary.isbn }}"
+              ><strong>{{ summary.title }}</strong></a
+            >
+            <small>{{ summary.author }}</small>
+            <small>{{ summary.published_at }}</small>
+          </p>
+          <p>
+            <small>{{ summary.pubdate }}</small>
+            <small>{{ summary.publisher }}</small>
+          </p>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+
+  {# TODO: pagination #}
+</div>
+{% endblock %}

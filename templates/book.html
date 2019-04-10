@@ -1,0 +1,40 @@
+{% extends "base.html" %} {% block title %}Top{% endblock %} {% block content %}
+<div class="container">
+  <h1 class="title"><a href="/">Librarian</a></h1>
+  <p class="subtitle">openBD収録書誌検索</p>
+</div>
+<hr />
+<div class="container">
+  <div class="card" style="width:400px;">
+    <div class="card-image">
+      <figure class="image is-2by3">
+        <img
+          src="{{ summary.cover if summary.cover else '/static/images/placeholder.jpg' }}"
+          alt="Placeholder image"
+        />
+      </figure>
+    </div>
+    <div class="card-content">
+      <div class="media">
+        <div class="media-left">
+          <figure class="image is-48x48">
+            <img
+              src="https://bulma.io/images/placeholders/96x96.png"
+              alt="Placeholder image"
+            />
+          </figure>
+        </div>
+        <div class="media-content">
+          <p class="title is-4">{{ summary.title }}</p>
+          <p class="subtitle is-6">{{ summary.author }}</p>
+          <p class="subtitle is-6">{{ summary.publisher }}</p>
+        </div>
+      </div>
+
+      <div class="content">
+        <time datetime="{{ summary.pubdate }}">{{ summary.pubdate }}</time>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
