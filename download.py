@@ -33,7 +33,8 @@ async def fetch_book_data(session, isbn_list, sem):
             return await res.text()
 
 
-async def fetch_all(chunked_isbn_list, sem):
+async def fetch_all(chunked_isbn_list, limit=5):
+    sem = asyncio.Semaphore(limit)
     async with aiohttp.ClientSession() as session:
         for isbn_list in chunked_isbn_list:
             data = await fetch_book_data(session, isbn_list, sem)
@@ -41,8 +42,6 @@ async def fetch_all(chunked_isbn_list, sem):
 
 
 async def main():
-    sem = asyncio.Semaphore(5)
-
     all_isbn_list = fetch_isbn_list()
     books_total = len(all_isbn_list)
 
@@ -50,7 +49,7 @@ async def main():
 
     with tqdm(total=books_total) as progress_bar:
         progress_bar.set_description("Downloading book summary")
-        return await fetch_all(chunked_isbn_list, sem)
+        return await fetch_all(chunked_isbn_list)
 
 
 if __name__ == "__main__":
