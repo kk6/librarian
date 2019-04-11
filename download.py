@@ -3,21 +3,9 @@ import requests
 from tqdm import tqdm
 import aiohttp
 import asyncio
+from tortoise import Tortoise
 
-
-"""
-aiohttp版に改良中。
-
-参考URL
-
-- https://qiita.com/meznat/items/c34fad95dab593f9bffa
-- https://qiita.com/icoxfog417/items/07cbf5110ca82629aca0
-
-async with tqdm
-
-- https://postd.cc/fast-scraping-in-python-with-asyncio/
-
-"""
+from models import BookSummary
 
 
 def fetch_isbn_list():
@@ -37,20 +25,40 @@ async def fetch_all(chunked_isbn_list, limit=5):
     sem = asyncio.Semaphore(limit)
     async with aiohttp.ClientSession() as session:
         cors = [fetch_book_data(session, isbn_list, sem) for isbn_list in chunked_isbn_list]
-        responses = [await f for f in tqdm(asyncio.as_completed(cors), total=len(cors))]
+        responses = [await f for f in tqdm(asyncio.as_completed(cors), total=len(cors), desc="downloding")]
         return responses
 
 
+async def insert(summary):
+    return await BookSummary.get_or_create(
+        isbn=summary["isbn"],
+        title=summary["title"],
+        volume=summary["volume"],
+        series=summary["series"],
+        author=summary["author"],
+        publisher=summary["publisher"],
+        pubdate=summary["pubdate"],
+        cover=summary["cover"],
+    )
+
+
+async def bulk_insert(responses):
+    rs = more_itertools.flatten(responses)
+    cors = [insert(r["summary"]) for r in rs]
+    responses = [await f for f in tqdm(asyncio.as_completed(cors), total=len(cors), desc="saving")]
+    return responses
+
+
 async def main():
+    await Tortoise.init(db_url="sqlite://db.sqlite3", modules={"models": ["models"]})
+    await Tortoise.generate_schemas()
     all_isbn_list = fetch_isbn_list()
 
     chunked_isbn_list = more_itertools.chunked(all_isbn_list, 1000)
-    return await fetch_all(chunked_isbn_list)
+    responses = await fetch_all(chunked_isbn_list)
+    return await bulk_insert(responses)
 
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
-    res = loop.run_until_complete(main())
-    for rs in res:
-        for r in rs:
-            print(r["summary"]["isbn"])
+    loop.run_until_complete(main())
