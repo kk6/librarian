@@ -1,3 +1,5 @@
+from typing import Iterable
+
 import more_itertools
 import requests
 from tqdm import tqdm
@@ -8,28 +10,28 @@ from tortoise import Tortoise
 from models import BookSummary
 
 
-def fetch_isbn_list():
+def request_isbn_list():
     res = requests.get("https://api.openbd.jp/v1/coverage")
     return res.json()
 
 
-async def fetch_book_data(session, isbn_list, sem):
+async def request_book_data(session: aiohttp.ClientSession, isbn_list: list, semaphore: asyncio.Semaphore):
     isbn_csv = ",".join(isbn_list)
     url = f"https://api.openbd.jp/v1/get?isbn={isbn_csv}"
-    async with sem:
-        async with session.get(url) as res:
-            return await res.json()
+    async with semaphore:
+        async with session.get(url) as resp:
+            return await resp.json()
 
 
-async def fetch_all(chunked_isbn_list, limit=5):
-    sem = asyncio.Semaphore(limit)
+async def request_all_book_data(chunked_isbn_list: Iterable[list], limit: int = 5):
+    semaphore = asyncio.Semaphore(limit)
     async with aiohttp.ClientSession() as session:
-        cors = [fetch_book_data(session, isbn_list, sem) for isbn_list in chunked_isbn_list]
+        cors = [request_book_data(session, isbn_list, semaphore) for isbn_list in chunked_isbn_list]
         responses = [await f for f in tqdm(asyncio.as_completed(cors), total=len(cors), desc="downloding")]
         return responses
 
 
-async def insert(summary):
+async def insert_book_summary(summary):
     return await BookSummary.get_or_create(
         isbn=summary["isbn"],
         title=summary["title"],
@@ -42,9 +44,9 @@ async def insert(summary):
     )
 
 
-async def bulk_insert(responses):
+async def bulk_insert_book_summary(responses):
     rs = more_itertools.flatten(responses)
-    cors = [insert(r["summary"]) for r in rs]
+    cors = [insert_book_summary(r["summary"]) for r in rs]
     responses = [await f for f in tqdm(asyncio.as_completed(cors), total=len(cors), desc="saving")]
     return responses
 
@@ -52,11 +54,11 @@ async def bulk_insert(responses):
 async def main():
     await Tortoise.init(db_url="sqlite://db.sqlite3", modules={"models": ["models"]})
     await Tortoise.generate_schemas()
-    all_isbn_list = fetch_isbn_list()
+    all_isbn_list = request_isbn_list()
 
     chunked_isbn_list = more_itertools.chunked(all_isbn_list, 1000)
-    responses = await fetch_all(chunked_isbn_list)
-    return await bulk_insert(responses)
+    responses = await request_all_book_data(chunked_isbn_list)
+    return await bulk_insert_book_summary(responses)
 
 
 if __name__ == "__main__":
