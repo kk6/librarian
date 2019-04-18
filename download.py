@@ -15,7 +15,9 @@ def request_isbn_list():
     return res.json()
 
 
-async def request_book_data(session: aiohttp.ClientSession, isbn_list: list, semaphore: asyncio.Semaphore):
+async def request_book_data(
+    session: aiohttp.ClientSession, isbn_list: list, semaphore: asyncio.Semaphore
+):
     isbn_csv = ",".join(isbn_list)
     url = f"https://api.openbd.jp/v1/get?isbn={isbn_csv}"
     async with semaphore:
@@ -26,8 +28,16 @@ async def request_book_data(session: aiohttp.ClientSession, isbn_list: list, sem
 async def request_all_book_data(chunked_isbn_list: Iterable[list], limit: int = 5):
     semaphore = asyncio.Semaphore(limit)
     async with aiohttp.ClientSession() as session:
-        cors = [request_book_data(session, isbn_list, semaphore) for isbn_list in chunked_isbn_list]
-        responses = [await f for f in tqdm(asyncio.as_completed(cors), total=len(cors), desc="downloding")]
+        cors = [
+            request_book_data(session, isbn_list, semaphore)
+            for isbn_list in chunked_isbn_list
+        ]
+        responses = [
+            await f
+            for f in tqdm(
+                asyncio.as_completed(cors), total=len(cors), desc="downloding"
+            )
+        ]
         return responses
 
 
@@ -47,7 +57,10 @@ async def insert_book_summary(summary):
 async def bulk_insert_book_summary(responses):
     rs = more_itertools.flatten(responses)
     cors = [insert_book_summary(r["summary"]) for r in rs]
-    responses = [await f for f in tqdm(asyncio.as_completed(cors), total=len(cors), desc="saving")]
+    responses = [
+        await f
+        for f in tqdm(asyncio.as_completed(cors), total=len(cors), desc="saving")
+    ]
     return responses
 
 
