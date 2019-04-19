@@ -54,6 +54,8 @@
     {% endfor %}
   </div>
 
-  {# TODO: pagination #}
+  {% if summaries %}
+  {% include 'pagination.html' %}
+  {% endif %}
 </div>
 {% endblock %}

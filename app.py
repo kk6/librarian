@@ -3,6 +3,7 @@ from tortoise import Tortoise
 from tortoise.query_utils import Q
 
 from models import BookSummary
+from pagination import Pagination
 
 app = App()
 templates = Templates(app)
@@ -30,7 +31,7 @@ async def search(req, res):
     page = int(req.query_params.get("page", 1))
     if search_query:
         words = search_query.strip().split(" ")
-        summaries = await BookSummary.filter(
+        summaries = BookSummary.filter(
             Q(isbn__in=words)
             | Q(title__in=words)
             | Q(publisher__in=words)
@@ -38,9 +39,15 @@ async def search(req, res):
         ).order_by("title")
 
     else:
-        summaries = await BookSummary.all().order_by("title")
+        summaries = BookSummary.all().order_by("title")
+
+    total = await summaries.count()
+    paginator = Pagination(summaries, per_page=10, current_page=page)
+    summaries = await paginator.paginate()
+
     res.html = await templates.render(
-        "search.html", summaries=summaries, q=search_query, page=page
+        "search.html", summaries=summaries, q=search_query, page=page,
+        paginator=paginator, total=total
     )
 
 

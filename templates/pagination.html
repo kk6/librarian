@@ -1,0 +1,13 @@
+  <nav class="pagination">
+    <p>Total: {{ total }}</p>
+  {% if paginator %}
+    <p>
+    {% if paginator.has_prev %}
+    <a class="button" href="?page={{ paginator.prev_page }}/{% if q %}&q={{ q }}{% endif %}">Prev</a>
+    {% endif %}
+    {% if paginator.has_next %}
+    <a class="button" href="?page={{ paginator.next_page }}{% if q %}&q={{ q }}{% endif %}">Next</a>
+    {% endif %}
+    </p>
+  {% endif %}
+  </nav>
