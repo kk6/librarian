@@ -31,15 +31,14 @@ async def search(req, res):
     page = int(req.query_params.get("page", 1))
     if search_query:
         words = search_query.strip().split(" ")
-        summaries = BookSummary.filter(
-            Q(isbn__in=words)
-            | Q(title__in=words)
-            | Q(publisher__in=words)
-            | Q(author__in=words)
-        ).order_by("title")
-
+        q = Q(isbn__in=words)
+        for word in words:
+            q |= Q(title__icontains=word)
+            q |= Q(publisher__icontains=word)
+            q |= Q(author__icontains=word)
+        summaries = BookSummary.filter(q).order_by("-isbn")
     else:
-        summaries = BookSummary.all().order_by("title")
+        summaries = BookSummary.all().order_by("-isbn")
 
     total = await summaries.count()
     paginator = Pagination(summaries, per_page=10, current_page=page)
