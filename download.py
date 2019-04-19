@@ -54,24 +54,24 @@ async def insert_book_summary(summary):
     )
 
 
-async def bulk_insert_book_summary(responses):
-    rs = more_itertools.flatten(responses)
-    cors = [insert_book_summary(r["summary"]) for r in rs]
-    responses = [
-        await f
-        for f in tqdm(asyncio.as_completed(cors), total=len(cors), desc="saving")
-    ]
-    return responses
+async def bulk_insert_book_summary(responses, total):
+    with tqdm(total=total, desc="saving") as bar:
+        for rs in responses:
+            cors = [insert_book_summary(r["summary"]) for r in rs]
+            for f in asyncio.as_completed(cors):
+                await f
+                bar.update(1)
 
 
 async def main():
     await Tortoise.init(db_url="sqlite://db.sqlite3", modules={"models": ["models"]})
     await Tortoise.generate_schemas()
     all_isbn_list = request_isbn_list()
+    total = len(all_isbn_list)
 
     chunked_isbn_list = more_itertools.chunked(all_isbn_list, 1000)
     responses = await request_all_book_data(chunked_isbn_list)
-    return await bulk_insert_book_summary(responses)
+    return await bulk_insert_book_summary(responses, total)
 
 
 if __name__ == "__main__":
