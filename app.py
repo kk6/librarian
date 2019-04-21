@@ -56,23 +56,5 @@ async def book_detail(req, res, isbn):
     res.html = await templates.render("book.html", summary=summary)
 
 
-@app.route("/home")
-async def home(req, res):
-    await BookSummary.create(
-        isbn="aaa1111",
-        title="ほげ",
-        volume="1",
-        series="s1",
-        author="hogesan",
-        publisher="ほげ 出版",
-        pubdate="20190401",
-        cover="hoge.jpg",
-    )
-    # Fetch all posts along with their categories
-    summaries = await BookSummary.all()
-    # Render a template that lists all posts
-    res.html = await templates.render("home.html", summaries=summaries)
-
-
 if __name__ == "__main__":
     app.run(debug=True)
