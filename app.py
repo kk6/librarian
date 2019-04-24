@@ -1,4 +1,4 @@
-from bocadillo import App, Templates
+from bocadillo import App, Templates, configure
 from tortoise import Tortoise
 from tortoise.query_utils import Q
 
@@ -6,6 +6,7 @@ from models import BookSummary
 from pagination import Pagination
 
 app = App()
+configure(app)
 templates = Templates(app)
 
 
@@ -55,6 +56,3 @@ async def book_detail(req, res, isbn):
     summary = await BookSummary.get(isbn=isbn)
     res.html = await templates.render("book.html", summary=summary)
 
-
-if __name__ == "__main__":
-    app.run(debug=True)
