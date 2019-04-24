@@ -1,4 +1,4 @@
-from bocadillo import App, Templates, configure
+from bocadillo import App, Templates, settings
 from tortoise import Tortoise
 from tortoise.query_utils import Q
 
@@ -6,13 +6,14 @@ from models import BookSummary
 from pagination import Pagination
 
 app = App()
-configure(app)
 templates = Templates(app)
 
 
 @app.on("startup")
 async def init_db():
-    await Tortoise.init(db_url="sqlite://db.sqlite3", modules={"models": ["models"]})
+    await Tortoise.init(
+        db_url=str(settings.get("DATABASE_URL")), modules={"models": ["models"]}
+    )
     await Tortoise.generate_schemas()
 
 
@@ -46,8 +47,12 @@ async def search(req, res):
     summaries = await paginator.paginate()
 
     res.html = await templates.render(
-        "search.html", summaries=summaries, q=search_query, page=page,
-        paginator=paginator, total=total
+        "search.html",
+        summaries=summaries,
+        q=search_query,
+        page=page,
+        paginator=paginator,
+        total=total,
     )
 
 
@@ -55,4 +60,3 @@ async def search(req, res):
 async def book_detail(req, res, isbn):
     summary = await BookSummary.get(isbn=isbn)
     res.html = await templates.render("book.html", summary=summary)
-
