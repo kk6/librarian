@@ -1,18 +1,20 @@
-from bocadillo import App, Templates, settings
+"""Application definition."""
+from bocadillo import App, discover_providers, Templates, settings
 from tortoise import Tortoise
 from tortoise.query_utils import Q
 
-from models import BookSummary
-from pagination import Pagination
+from .models import BookSummary
+from .pagination import Pagination
 
 app = App()
 templates = Templates(app)
+discover_providers("librarian.providerconf")
 
 
 @app.on("startup")
 async def init_db():
     await Tortoise.init(
-        db_url=str(settings.get("DATABASE_URL")), modules={"models": ["models"]}
+        db_url=str(settings.get("DATABASE_URL")), modules={"models": ["librarian.models"]}
     )
     await Tortoise.generate_schemas()
 
