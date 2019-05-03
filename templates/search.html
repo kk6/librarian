@@ -10,6 +10,7 @@
           type="text"
           name="q"
           placeholder="検索ワードを入力"
+          {% if q %}value="{{ q }}"{% endif %}
         />
       </div>
       <div class="control">

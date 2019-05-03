@@ -30,17 +30,15 @@ async def index(req, res):
 
 
 @app.route("/search")
-async def search(req, res):
-    search_query = req.query_params.get("q", "")
-    page = int(req.query_params.get("page", 1))
-    if search_query:
-        words = search_query.strip().split(" ")
-        q = Q(isbn__in=words)
+async def search(req, res, q: str = None, page: int = 1):
+    if q:
+        words = q.strip().split(" ")
+        query = Q(isbn__in=words)
         for word in words:
-            q |= Q(title__icontains=word)
-            q |= Q(publisher__icontains=word)
-            q |= Q(author__icontains=word)
-        summaries = BookSummary.filter(q).order_by("-isbn")
+            query |= Q(title__icontains=word)
+            query |= Q(publisher__icontains=word)
+            query |= Q(author__icontains=word)
+        summaries = BookSummary.filter(query).order_by("-isbn")
     else:
         summaries = BookSummary.all().order_by("-isbn")
 
@@ -51,7 +49,7 @@ async def search(req, res):
     res.html = await templates.render(
         "search.html",
         summaries=summaries,
-        q=search_query,
+        q=q,
         page=page,
         paginator=paginator,
         total=total,
